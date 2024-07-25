@@ -1,5 +1,6 @@
 import * as THREE from 'three'
-
+import {OBJExporter} from "three/examples/jsm/exporters/OBJExporter";
+import * as fs from 'fs';
 
 export class GeometryQuads {
 
@@ -14,6 +15,7 @@ export class GeometryQuads {
     private EdgeCenters: Array<THREE.Vector3> = []
     private v: Array<number> = []
     private indices: Array<number> = []
+    private Exporter: OBJExporter = new OBJExporter()
 
     constructor(vertices: Array<THREE.Vector3>, faces: Array<Array<number>>){
 
@@ -42,8 +44,6 @@ export class GeometryQuads {
                 let included = false
                 for(let i = 0; i < this.Edges.length; i++){
                     if(this.Edges[i].includes(e[0]) && this.Edges[i].includes(e[1])){
-                        console.log(this.Edges[i])
-                        console.log(e)
                         edge_indices[index] = i
                         included = true
                         break
@@ -62,14 +62,13 @@ export class GeometryQuads {
             center.add(this.Vertices[f[1]])
             center.add(this.Vertices[f[2]])
             center.add(this.Vertices[f[3]])
-            this.FaceCenters.push(new THREE.Vector3(center.x/4, center.y/4, center.z/4))
+            this.FaceCenters.push(center.multiplyScalar(1/4))
             this.indices.push(...[f[0],f[1],f[2],f[3]])
 
         })
         
         this.form_geometry()
 
-        console.log(this.FaceEdges)
     }
 
 
@@ -137,7 +136,7 @@ export class GeometryQuads {
             let valence = edge_count
             let vertex = new THREE.Vector3(0, 0, 0)
             vertex.add(average_face_centers.multiplyScalar(1/face_count/valence))
-            vertex.add(average_edge_centers.multiplyScalar(2/edge_count/valence))
+            vertex.add(average_edge_midpoints.multiplyScalar(2/edge_count/valence))
             vertex.add(v.multiplyScalar((valence-3)/valence))
             new_vertices.push(vertex)
         })
@@ -176,6 +175,8 @@ export class GeometryQuads {
             }
         })
 
+        console.log(faces)
+
         this.Catmull = new GeometryQuads(smooth_vertices, faces)
 
         faces.forEach(f =>{
@@ -186,6 +187,47 @@ export class GeometryQuads {
         })
 
     }
+
+    Download_Quads(): void{
+
+        let data = "o\n"
+
+        this.Vertices.forEach(v => {
+            data += "v " + v.x.toString() + " " + v.y.toString() + " " + v.z.toString() + "\n"
+        })
+
+        this.Faces.forEach(f => {
+            data += "f " + f[0].toString() + "//" + f[0].toString() + " " + f[1].toString() + "//" + f[1].toString()
+            data += " " + f[2].toString() + "//" + f[2].toString() + " " + f[3].toString() + "//" + f[3].toString() + "\n"
+        })
+
+        let element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
+        element.setAttribute('download', "quads_geometry.obj");
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+        document.body.removeChild(element);
+    }
+
+    Download(material: THREE.Material): void{
+
+        const body = new THREE.Mesh(this.Buffer, material)
+        let data = this.Exporter.parse(body);
+
+        let element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
+        element.setAttribute('download', "catmull_clark.obj");
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+        document.body.removeChild(element);
+    }
+
 
 
 }

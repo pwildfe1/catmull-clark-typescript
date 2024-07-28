@@ -18,7 +18,7 @@ environment.scene.fog = new THREE.Fog( 0xcccccc, 50, 100 );
 environment.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 environment.renderer.toneMappingExposure = 0.85;
 
-let mat = new THREE.MeshStandardMaterial({color: 0x00ff00})
+let mat = new THREE.MeshStandardMaterial({color: 0x00ff00, side: 2})
 mat.metalness = 0.5
 mat.roughness = 0.1
 const lambert = new THREE.MeshLambertMaterial({color: new THREE.Color("rgb(255, 255, 0)"), side: 2})
@@ -40,20 +40,24 @@ let faces = [
 
 
 const custom_geo = new GeometryQuads(vertices, faces)
-custom_geo.smooth_geometry()
-let lvl01 = custom_geo.Catmull
-lvl01.Buffer.computeVertexNormals()
-lvl01.smooth_geometry()
-let lvl02 = lvl01.Catmull
-lvl02.smooth_geometry()
-let lvl03 = lvl02.Catmull
-lvl03.smooth_geometry()
+let smoothed_geo = new GeometryQuads(vertices, faces)
+let smoothed = new THREE.Mesh(smoothed_geo.Buffer, mat)
 
-const smoothed = new THREE.Mesh(lvl03.Buffer, mat)
 environment.scene.add(smoothed)
 
-gui.add(lvl03, 'Download').onChange(function(){})
-gui.add(lvl03, 'Download_Quads').onChange(function(){})
+gui.add(smoothed_geo, 'Download').onChange(function(){})
+gui.add(smoothed_geo, 'Download_Quads').onChange(function(){})
+gui.add(custom_geo, 'Smooth_Count', 0, 2, 1).onChange(function(){
+  if (custom_geo.Smooth_Count > 0){
+    smoothed_geo = custom_geo.smooth_geometry()
+  } else {
+    smoothed_geo = new GeometryQuads(custom_geo.Vertices, custom_geo.Faces)
+  }
+  environment.scene.remove(smoothed)
+  smoothed_geo.Buffer.computeVertexNormals()
+  smoothed = new THREE.Mesh(smoothed_geo.Buffer, mat)
+  environment.scene.add(smoothed)
+})
 
 window.addEventListener('resize', onWindowResize, false)
 function onWindowResize() {

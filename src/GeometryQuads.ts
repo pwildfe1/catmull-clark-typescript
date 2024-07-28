@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import {OBJExporter} from "three/examples/jsm/exporters/OBJExporter";
 import {Vec3} from "./Vec3"
-import * as fs from 'fs';
 
 export class GeometryQuads {
 
@@ -11,6 +10,7 @@ export class GeometryQuads {
     FaceEdges: Array<Array<number>> = []
     Buffer: THREE.BufferGeometry = new THREE.BufferGeometry()
     Catmull: GeometryQuads
+    Smooth_Count: number = 0
 
     private FaceCenters: Array<Vec3> = []
     private EdgeCenters: Array<Vec3> = []
@@ -87,7 +87,24 @@ export class GeometryQuads {
 
     }
 
-    smooth_geometry(){
+    smooth_geometry() : GeometryQuads {
+
+        this.execute_catmull()
+        let smoothed = this.Catmull
+
+        if (this.Smooth_Count > 1){
+            for(let i = 0; i < this.Smooth_Count; i++){
+                smoothed.execute_catmull()
+                smoothed = smoothed.Catmull
+            }
+            return smoothed
+        }
+
+        return smoothed
+
+    }
+
+    execute_catmull(){
 
         this.EdgeCenters = []
         let new_vertices: Array<Vec3> = []
@@ -190,7 +207,7 @@ export class GeometryQuads {
                 faces.push(face)
             }
         })
-        
+
         this.Catmull = new GeometryQuads(smooth_vertices, faces)
 
         faces.forEach(f =>{

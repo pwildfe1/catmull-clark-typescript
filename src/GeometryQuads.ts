@@ -14,6 +14,7 @@ export class GeometryQuads {
 
     private FaceCenters: Array<Vec3> = []
     private EdgeCenters: Array<Vec3> = []
+    private FaceNormals: Array<Vec3> = []
     private v: Array<number> = []
     private indices: Array<number> = []
     private Exporter: OBJExporter = new OBJExporter()
@@ -33,6 +34,7 @@ export class GeometryQuads {
         this.Edges = []
         this.EdgeCenters = []
         this.FaceEdges = []
+        this.FaceNormals = []        
 
         this.Vertices.forEach(p=>{this.v.push(...[p.x, p.y, p.z])})
 

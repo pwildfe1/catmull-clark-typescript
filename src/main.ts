@@ -1,6 +1,7 @@
 import './style.css'
 import * as THREE from 'three'
 import { GeometryQuads } from "./GeometryQuads"
+import {Vec3} from "./Vec3"
 import { visualizer } from './visualizer'
 import {GUI} from "dat.gui";
 
@@ -24,8 +25,8 @@ const lambert = new THREE.MeshLambertMaterial({color: new THREE.Color("rgb(255, 
 const wireframe = new THREE.MeshBasicMaterial({color: new THREE.Color("rgb(255, 0, 0)"), wireframe: true})
 
 const vertices = [
-  new THREE.Vector3(-1, -1, -1), new THREE.Vector3(1, -1, -1), new THREE.Vector3(1, 1, -1), new THREE.Vector3(-1, 1, -1),
-  new THREE.Vector3(-1, -1, 1), new THREE.Vector3(1, -1, 1), new THREE.Vector3(1, 1, 1), new THREE.Vector3(-1, 1, 1)
+  new Vec3(-5, -5, -5), new Vec3(5, -5, -5), new Vec3(5, 5, -5), new Vec3(-5, 5, -5),
+  new Vec3(-5, -5, 5), new Vec3(5, -5, 5), new Vec3(5, 5, 5), new Vec3(-5, 5, 5)
 ]
 
 let faces = [
@@ -41,17 +42,18 @@ let faces = [
 const custom_geo = new GeometryQuads(vertices, faces)
 custom_geo.smooth_geometry()
 let lvl01 = custom_geo.Catmull
-// lvl01.smooth_geometry()
-// let lvl02 = lvl01.Catmull
-// lvl02.smooth_geometry()
-// let lvl03 = lvl02.Catmull
-// lvl03.smooth_geometry()
+lvl01.Buffer.computeVertexNormals()
+lvl01.smooth_geometry()
+let lvl02 = lvl01.Catmull
+lvl02.smooth_geometry()
+let lvl03 = lvl02.Catmull
+lvl03.smooth_geometry()
 
-const smoothed = new THREE.Mesh(lvl01.Buffer, mat)
+const smoothed = new THREE.Mesh(lvl03.Buffer, mat)
 environment.scene.add(smoothed)
 
-gui.add(custom_geo, 'Download').onChange(function(){})
-gui.add(custom_geo, 'Download_Quads').onChange(function(){})
+gui.add(lvl03, 'Download').onChange(function(){})
+gui.add(lvl03, 'Download_Quads').onChange(function(){})
 
 window.addEventListener('resize', onWindowResize, false)
 function onWindowResize() {

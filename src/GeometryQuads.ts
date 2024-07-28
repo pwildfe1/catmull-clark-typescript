@@ -1,23 +1,24 @@
 import * as THREE from 'three'
 import {OBJExporter} from "three/examples/jsm/exporters/OBJExporter";
+import {Vec3} from "./Vec3"
 import * as fs from 'fs';
 
 export class GeometryQuads {
 
-    Vertices: Array<THREE.Vector3> = []
+    Vertices: Array<Vec3> = []
     Faces: Array<Array<number>> = []
     Edges: Array<Array<number>> = []
     FaceEdges: Array<Array<number>> = []
     Buffer: THREE.BufferGeometry = new THREE.BufferGeometry()
     Catmull: GeometryQuads
 
-    private FaceCenters: Array<THREE.Vector3> = []
-    private EdgeCenters: Array<THREE.Vector3> = []
+    private FaceCenters: Array<Vec3> = []
+    private EdgeCenters: Array<Vec3> = []
     private v: Array<number> = []
     private indices: Array<number> = []
     private Exporter: OBJExporter = new OBJExporter()
 
-    constructor(vertices: Array<THREE.Vector3>, faces: Array<Array<number>>){
+    constructor(vertices: Array<Vec3>, faces: Array<Array<number>>){
 
         this.Vertices = vertices
         this.Faces = faces
@@ -55,18 +56,17 @@ export class GeometryQuads {
                 }
             })
 
+            let center = new Vec3(0, 0, 0)
+            center = center.add(this.Vertices[f[0]])
+            center = center.add(this.Vertices[f[1]])
+            center = center.add(this.Vertices[f[2]])
+            center = center.add(this.Vertices[f[3]])
+            this.FaceCenters.push(center.scale(1/4))
+            this.indices.push(...[f[0],f[1],f[2],f[3]])
             this.FaceEdges.push(edge_indices)
 
-            let center = new THREE.Vector3(0, 0, 0)
-            center.add(this.Vertices[f[0]])
-            center.add(this.Vertices[f[1]])
-            center.add(this.Vertices[f[2]])
-            center.add(this.Vertices[f[3]])
-            this.FaceCenters.push(center.multiplyScalar(1/4))
-            this.indices.push(...[f[0],f[1],f[2],f[3]])
-
         })
-        
+
         this.form_geometry()
 
     }
@@ -87,61 +87,75 @@ export class GeometryQuads {
 
     }
 
-
     smooth_geometry(){
 
         this.EdgeCenters = []
-        let new_vertices: Array<THREE.Vector3> = []
+        let new_vertices: Array<Vec3> = []
 
-        this.Edges.forEach((e, eindex)=>{
-            let edge_count = 0
-            let center = new THREE.Vector3(0, 0, 0)
-            this.FaceEdges.forEach((f, findex) => {
-                if (f.includes(eindex)){
-                    edge_count += 1
-                    center.add(this.FaceCenters[findex])
+        this.Edges.forEach(e =>{
+            let face_count = 0
+            let center = new Vec3(0, 0, 0)
+            this.Faces.forEach((f, findex) => {
+                if (f.includes(e[0]) && f.includes(e[1])){
+                    face_count += 1
+                    center = center.add(this.FaceCenters[findex])
                 }
             })
-            center.add(this.Vertices[e[0]])
-            center.add(this.Vertices[e[1]])
-            center.multiplyScalar(1/(edge_count + 2))
+            center = center.add(this.Vertices[e[0]])
+            center = center.add(this.Vertices[e[1]])
+            center = center.scale(1/(face_count + 2))
             this.EdgeCenters.push(center)
         })
 
-        console.log(this.Edges.length)
-        console.log(this.EdgeCenters.length)
+        this.Vertices.forEach((vert, v_index) => {
 
-        this.Vertices.forEach((v, v_index) => {
             let face_count = 0
             let edge_count = 0
-            let average_face_centers = new THREE.Vector3(0, 0, 0)
-            let average_edge_centers = new THREE.Vector3(0, 0, 0)
-            let average_edge_midpoints = new THREE.Vector3(0, 0, 0)
+            let average_face_centers = new Vec3(0, 0, 0)
+            let average_edge_centers = new Vec3(0, 0, 0)
+            let average_edge_midpoints = new Vec3(0, 0, 0)
+            
             this.Faces.forEach((f, findex)=>{ 
                 if(f.includes(v_index)){
                     face_count += 1
-                    average_face_centers.add(this.FaceCenters[findex])
-                    this.FaceEdges[findex].forEach(e => {
-                        if(this.Edges[e].includes(v_index)){
-                            edge_count += 1
-                            average_edge_centers.add(this.EdgeCenters[e])
-                            let midpoint = new THREE.Vector3(0, 0, 0)
-                            midpoint.add(this.Vertices[this.Edges[e][0]])
-                            midpoint.add(this.Vertices[this.Edges[e][1]])
-                            average_edge_midpoints.add(midpoint.multiplyScalar(1/2))
-                        }
-                    })
+                    average_face_centers = average_face_centers.add(this.FaceCenters[findex])
                 }
             })
+
+            this.Edges.forEach((e, eindex) => {
+                if(e.includes(v_index)){
+                    edge_count += 1
+                    average_edge_centers = average_edge_centers.add(this.EdgeCenters[eindex])
+                    let midpoint = new Vec3(0, 0, 0)
+                    midpoint = midpoint.add(this.Vertices[e[0]])
+                    midpoint = midpoint.add(this.Vertices[e[1]])
+                    midpoint = midpoint.scale(1/2)
+                    average_edge_midpoints = average_edge_midpoints.add(midpoint)
+                }
+            })
+            
+            average_face_centers = average_face_centers.scale(1/face_count)
+            average_edge_midpoints = average_edge_midpoints.scale(1/edge_count)
+
+            console.log(average_face_centers)
+            console.log(average_edge_midpoints)
+
             let valence = edge_count
-            let vertex = new THREE.Vector3(0, 0, 0)
-            vertex.add(average_face_centers.multiplyScalar(1/face_count/valence))
-            vertex.add(average_edge_midpoints.multiplyScalar(2/edge_count/valence))
-            vertex.add(v.multiplyScalar((valence-3)/valence))
+            let vertex = average_face_centers.scale(1/valence)
+            vertex = vertex.add(average_edge_midpoints.scale(2/valence))
+            vertex = vertex.add(vert.scale((valence-3)/valence))
+
             new_vertices.push(vertex)
+
         })
 
-        let smooth_vertices: Array<THREE.Vector3> = []
+        this.UpdateSmoothFaces(new_vertices)
+
+    }
+
+    UpdateSmoothFaces(new_vertices : Array<Vec3>){
+
+        let smooth_vertices: Array<Vec3> = []
         let flat_v: Array<number> = []
         let faces: Array<Array<number>> = []
         let indices: Array<number> = []
@@ -149,12 +163,14 @@ export class GeometryQuads {
         this.Faces.forEach((f, findex)=>{
             for(let i = 0; i < f.length; i++){
                 
-                let edge_point = this.EdgeCenters[this.FaceEdges[findex][i]]
+                let edge_point_01 = this.EdgeCenters[this.FaceEdges[findex][i]]
+                let next = i - 1
+                if (i == 0) { next = f.length - 1 }
+                let edge_point_02 = this.EdgeCenters[this.FaceEdges[findex][next]]
                 let face_center = this.FaceCenters[findex]
                 let v1 = new_vertices[f[i]]
-                let v2 = new_vertices[f[(i+1)%f.length]]
 
-                let vertices = [v1, edge_point, v2, face_center]
+                let vertices = [v1, edge_point_02, face_center, edge_point_01]
                 let face: Array<number> = []
 
                 vertices.forEach(v => {
@@ -174,9 +190,7 @@ export class GeometryQuads {
                 faces.push(face)
             }
         })
-
-        console.log(faces)
-
+        
         this.Catmull = new GeometryQuads(smooth_vertices, faces)
 
         faces.forEach(f =>{
@@ -185,7 +199,6 @@ export class GeometryQuads {
             indices.push(...triangle01)
             indices.push(...triangle02)
         })
-
     }
 
     Download_Quads(): void{
@@ -197,8 +210,12 @@ export class GeometryQuads {
         })
 
         this.Faces.forEach(f => {
-            data += "f " + f[0].toString() + "//" + f[0].toString() + " " + f[1].toString() + "//" + f[1].toString()
-            data += " " + f[2].toString() + "//" + f[2].toString() + " " + f[3].toString() + "//" + f[3].toString() + "\n"
+            let v0 = f[0]+1
+            let v1 = f[1]+1
+            let v2 = f[2]+1
+            let v3 = f[3]+1
+            data += "f " + v0.toString() + "//" + v0.toString() + " " + v1.toString() + "//" + v1.toString()
+            data += " " + v2.toString() + "//" + v2.toString() + " " + v3.toString() + "//" + v3.toString() + "\n"
         })
 
         let element = document.createElement('a');

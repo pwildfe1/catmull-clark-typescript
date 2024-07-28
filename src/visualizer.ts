@@ -60,7 +60,7 @@ export class visualizer {
         this.current = "Perspective"
 
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
-        this.headlight = new THREE.PointLight(0xffffff, 1000, 100)
+        this.headlight = new THREE.PointLight(0xffffff, 1, 100)
 
         if (attach_light){
             this.headlight.position.set(this.camera.position.x, this.camera.position.y, this.camera.position.z)

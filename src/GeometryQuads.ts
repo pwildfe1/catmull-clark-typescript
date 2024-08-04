@@ -156,9 +156,6 @@ export class GeometryQuads {
             average_face_centers = average_face_centers.scale(1/face_count)
             average_edge_midpoints = average_edge_midpoints.scale(1/edge_count)
 
-            console.log(average_face_centers)
-            console.log(average_edge_midpoints)
-
             let valence = edge_count
             let vertex = average_face_centers.scale(1/valence)
             vertex = vertex.add(average_edge_midpoints.scale(2/valence))
@@ -207,6 +204,9 @@ export class GeometryQuads {
                     }
                 })
                 faces.push(face)
+                if(findex == this.Faces.length - 1){
+                    
+                }
             }
         })
 
@@ -222,13 +222,19 @@ export class GeometryQuads {
 
     Download_Quads(): void{
 
+        let smooth_geo = new GeometryQuads(this.Vertices, this.Faces)
+
+        if(this.Smooth_Count > 0){
+            smooth_geo = this.smooth_geometry()
+        }
+
         let data = "o\n"
 
-        this.Vertices.forEach(v => {
+        smooth_geo.Vertices.forEach(v => {
             data += "v " + v.x.toString() + " " + v.y.toString() + " " + v.z.toString() + "\n"
         })
 
-        this.Faces.forEach(f => {
+        smooth_geo.Faces.forEach(f => {
             let v0 = f[0]+1
             let v1 = f[1]+1
             let v2 = f[2]+1
@@ -250,7 +256,9 @@ export class GeometryQuads {
 
     Download(material: THREE.Material): void{
 
-        const body = new THREE.Mesh(this.Buffer, material)
+        const smooth_geo = this.smooth_geometry()
+
+        const body = new THREE.Mesh(smooth_geo.Buffer, material)
         let data = this.Exporter.parse(body);
 
         let element = document.createElement('a');

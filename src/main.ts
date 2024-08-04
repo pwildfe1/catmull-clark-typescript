@@ -4,6 +4,7 @@ import { GeometryQuads } from "./GeometryQuads"
 import {Vec3} from "./Vec3"
 import { visualizer } from './visualizer'
 import {GUI} from "dat.gui";
+import { ThreadedRing } from './ThreadedRing'
 
 const gui = new GUI()
 const environment = new visualizer();
@@ -23,39 +24,25 @@ let reflect = .75
 let emi = .1
 let mat = new THREE.MeshPhongMaterial({color: 0xD9B665, transparent: true, emissive: 0xD9B665, emissiveIntensity: emi, reflectivity: reflect, side: 2})
 
-// const envTexture = new THREE.CubeTextureLoader().load([
-//   'px.png',
-//   'nx.png',
-//   'py.png',
-//   'ny.png',
-//   'pz.png',
-//   'nz.png'
-// ])
-// envTexture.mapping = THREE.CubeReflectionMapping
-// mat.envMap = envTexture
+const envTexture = new THREE.CubeTextureLoader().load([
+  'px.png',
+  'nx.png',
+  'py.png',
+  'ny.png',
+  'pz.png',
+  'nz.png'
+])
+envTexture.mapping = THREE.CubeReflectionMapping
+mat.envMap = envTexture
 
 environment.scene.fog = new THREE.Fog( 0xcccccc, 50, 100 );
 environment.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 environment.renderer.toneMappingExposure = 0.85;
 
-
-const vertices = [
-  new Vec3(-5, -5, -5), new Vec3(5, -5, -5), new Vec3(5, 5, -5), new Vec3(-5, 5, -5),
-  new Vec3(-5, -5, 5), new Vec3(5, -5, 5), new Vec3(5, 5, 5), new Vec3(-5, 5, 5)
-]
-
-let faces = [
-  [0, 1, 2, 3],
-  [0, 1, 5, 4],
-  [1, 2, 6, 5],
-  [2, 3, 7, 6],
-  [3, 0, 4, 7],
-  [4, 5, 6, 7]
-]
-
-
-const custom_geo = new GeometryQuads(vertices, faces)
-let smoothed_geo = new GeometryQuads(vertices, faces)
+const ring = new ThreadedRing()
+let custom_geo = ring.Geometry
+let smoothed_geo = new GeometryQuads(ring.Geometry.Vertices, ring.Geometry.Faces)
+smoothed_geo.Buffer.computeVertexNormals()
 let smoothed = new THREE.Mesh(smoothed_geo.Buffer, mat)
 let edges = new THREE.EdgesGeometry( smoothed.geometry ); 
 let lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
@@ -94,5 +81,6 @@ function animate(){
     requestAnimationFrame(animate)
     environment.render()
 }
+
 
 animate()

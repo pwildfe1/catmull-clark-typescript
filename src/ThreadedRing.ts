@@ -15,7 +15,7 @@ export class ThreadedRing {
 
     Radius: number = 8.75
     Thickness: number = 5
-    RibbonThickness: number = 1.5
+    MidSectionFactor: number = 1
     Width: number = 10
     Segments: number = 37
     Geometry: GeometryQuads
@@ -25,7 +25,8 @@ export class ThreadedRing {
     BottomSeparation: boolean = false
     
 
-    constructor (){
+    constructor (segment_count: number){
+        this.Segments = segment_count
         this.FormBase()
     }
 
@@ -149,7 +150,7 @@ export class ThreadedRing {
                 next_top = offset + top_grid[i].length
             }
 
-            let section_factor = Math.pow((1 - (separations[i]/(ring_separation + section_amplitude)* .25)),3)
+            let section_factor = Math.pow((1 - (separations[i]/(ring_separation + section_amplitude)* .25)),3) * this.MidSectionFactor
 
             let bot_center = new Vec3(0, 0, 0)
             let top_center = new Vec3(0, 0, 0)
@@ -202,7 +203,7 @@ export class ThreadedRing {
             
         }
 
-        faces.push([7, 37*8 - 1, 37*8 - 2, 6])
+        faces.push([7, this.Segments*8 - 1, this.Segments*8 - 2, 6])
         
 
         this.Geometry = new GeometryQuads(vertices, faces)

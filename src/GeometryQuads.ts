@@ -91,18 +91,25 @@ export class GeometryQuads {
 
     smooth_geometry() : GeometryQuads {
 
-        this.execute_catmull()
-        let smoothed = this.Catmull
+        if (this.Smooth_Count > 0){
 
-        if (this.Smooth_Count > 1){
-            for(let i = 0; i < this.Smooth_Count; i++){
-                smoothed.execute_catmull()
-                smoothed = smoothed.Catmull
+            this.execute_catmull()
+            let smoothed = this.Catmull
+
+            if (this.Smooth_Count > 1){
+                for(let i = 0; i < this.Smooth_Count; i++){
+                    smoothed.execute_catmull()
+                    smoothed = smoothed.Catmull
+                }
+                return smoothed
             }
-            return smoothed
-        }
 
-        return smoothed
+            return smoothed
+        } else {
+
+            return new GeometryQuads(this.Vertices, this.Faces)
+
+        }
 
     }
 

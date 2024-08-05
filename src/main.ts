@@ -1,10 +1,8 @@
 import './style.css'
 import * as THREE from 'three'
-import { GeometryQuads } from "./GeometryQuads"
-import {Vec3} from "./Vec3"
 import { visualizer } from './visualizer'
 import {GUI} from "dat.gui";
-import { ThreadedRing } from './ThreadedRing'
+import { ThreadedRingMesh } from './ThreadedRingMesh'
 
 const gui = new GUI()
 const environment = new visualizer();
@@ -39,35 +37,21 @@ environment.scene.fog = new THREE.Fog( 0xcccccc, 50, 100 );
 environment.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 environment.renderer.toneMappingExposure = 0.85;
 
-const ring = new ThreadedRing()
-let custom_geo = ring.Geometry
-let smoothed_geo = new GeometryQuads(ring.Geometry.Vertices, ring.Geometry.Faces)
-smoothed_geo.Buffer.computeVertexNormals()
-let smoothed = new THREE.Mesh(smoothed_geo.Buffer, mat)
-let edges = new THREE.EdgesGeometry( smoothed.geometry ); 
-let lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
+const myThreadedMesh = new ThreadedRingMesh(environment, mat)
 
-environment.scene.add(lines)
-environment.scene.add(smoothed)
-
-gui.add(smoothed_geo, 'Download').onChange(function(){})
-gui.add(smoothed_geo, 'Download_Quads').onChange(function(){})
-gui.add(custom_geo, 'Smooth_Count', 0, 2, 1).onChange(function(){
-  if (custom_geo.Smooth_Count > 0){
-    smoothed_geo = custom_geo.smooth_geometry()
-  } else {
-    smoothed_geo = new GeometryQuads(custom_geo.Vertices, custom_geo.Faces)
-  }
-  environment.scene.remove(smoothed)
-  smoothed_geo.Buffer.computeVertexNormals()
-  smoothed = new THREE.Mesh(smoothed_geo.Buffer, mat)
-  environment.scene.add(smoothed)
-
-  environment.scene.remove(lines)
-  edges = new THREE.EdgesGeometry( smoothed.geometry ); 
-  lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
-  environment.scene.add(lines)
+gui.add(myThreadedMesh, "SmoothCount", 0, 1, 1).onChange(function(){
+  myThreadedMesh.UpdateMesh()
 })
+gui.add(myThreadedMesh, "WaveCount", 0, 2, .5).onChange(function(){
+  myThreadedMesh.UpdateWaveCount()
+})
+gui.add(myThreadedMesh, "SegmentCount", 25, 41, 1).onChange(function(){
+  myThreadedMesh.UpdateSegmentCount()
+})
+gui.add(myThreadedMesh, "MidSectionFactor", .5, 1.5, .1).onChange(function(){
+  myThreadedMesh.UpdateMidSection()
+})
+gui.add(myThreadedMesh, "Download").listen()
 
 window.addEventListener('resize', onWindowResize, false)
 function onWindowResize() {

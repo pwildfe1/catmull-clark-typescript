@@ -1,7 +1,6 @@
 import './style.css'
 import * as THREE from 'three'
 import { GeometryQuads } from "./GeometryQuads"
-import {Vec3} from "./Vec3"
 import { ThreadedRing } from './ThreadedRing'
 import { visualizer } from './visualizer'
 
@@ -15,6 +14,7 @@ export class ThreadedRingMesh {
     WaveCount: number = 0
     SmoothCount: number = 0
     SegmentCount: number = 37
+    Diameter: number = 17
     Ring: ThreadedRing
     Environment: visualizer
     Wireframe: boolean = true
@@ -24,7 +24,7 @@ export class ThreadedRingMesh {
 
     constructor (environment : visualizer, material: THREE.MeshPhongMaterial){
 
-        this.Ring = new ThreadedRing(this.SegmentCount)
+        this.Ring = new ThreadedRing(this.SegmentCount, this.Diameter)
         this.Material = material
         this.Environment = environment
 
@@ -78,6 +78,15 @@ export class ThreadedRingMesh {
     UpdateMidSection(){
         
         this.Ring.MidSectionFactor = this.MidSectionFactor
+        this.Ring.FormBase()
+        this.UpdateMesh()
+
+    }
+
+
+    UpdateDiameter(){
+        
+        this.Ring.Diameter = this.Diameter
         this.Ring.FormBase()
         this.UpdateMesh()
 

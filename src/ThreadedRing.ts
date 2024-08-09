@@ -1,31 +1,24 @@
 import './style.css'
-import * as THREE from 'three'
 import { GeometryQuads } from "./GeometryQuads"
 import {Vec3} from "./Vec3"
 
-function arange(start: number, end: number, step: number = 1): number[] {
-    const result: number[] = [];
-    for (let i = start; i < end; i += step) {
-        result.push(i);
-    }
-    return result;
-}
 
 export class ThreadedRing {
 
-    Radius: number = 8.75
+    Diameter: number = 17.5
     Thickness: number = 5
     MidSectionFactor: number = 1
     Width: number = 10
     Segments: number = 37
-    Geometry: GeometryQuads
+    Geometry: GeometryQuads = new GeometryQuads([], [])
 
     Interval: number = 2
     WaveCount: number = 0
     BottomSeparation: boolean = false
     
 
-    constructor (segment_count: number){
+    constructor (segment_count: number, diameter: number){
+        this.Diameter = diameter
         this.Segments = segment_count
         this.FormBase()
     }
@@ -48,14 +41,14 @@ export class ThreadedRing {
         for (let i = 0; i < this.Segments; i++){
 
             let angle = 2 * Math.PI * i/(this.Segments - 1)
-            let inner = this.Radius
+            let inner = this.Diameter/2
 
             let separation = Math.abs(section_amplitude * Math.sin(i/(this.Segments - 1) * this.WaveCount * 2 * Math.PI)) + ring_separation
             separations.push(separation)
 
-            if (this.BottomSeparation){
-                bottom_y = -separations[i] + ring_separation
-            }
+            // if (this.BottomSeparation){
+            //     bottom_y = -separations[i] + ring_separation
+            // }
             
             let pt01 = new Vec3(inner * Math.cos(angle), bottom_y, inner * Math.sin(angle))
             let pt02 = new Vec3((inner + thread) * Math.cos(angle), bottom_y, (inner + thread) * Math.sin(angle))
@@ -68,7 +61,7 @@ export class ThreadedRing {
 
             bottom.forEach(p => { points.push(p) })
             bottom.reverse()
-            bottom.forEach(p => { points.push(p.add(new Vec3(0, 2, 0))) })
+            bottom.forEach(p => { points.push(p.add(new Vec3(0, 1.5, 0))) })
             
             bot_grid.push(points)
             vertices.push(...points)
@@ -98,7 +91,7 @@ export class ThreadedRing {
         for (let i = 0; i < this.Segments; i++){
 
             let angle = 2 * Math.PI * i/(this.Segments - 1)
-            let inner = this.Radius
+            let inner = this.Diameter/2
             
             let pt01 = new Vec3(inner * Math.cos(angle), separations[i], inner * Math.sin(angle))
             let pt02 = new Vec3((inner + 1) * Math.cos(angle), separations[i], (inner + 1) * Math.sin(angle))
@@ -111,7 +104,7 @@ export class ThreadedRing {
 
             bottom.forEach(p => { points.push(p) })
             bottom.reverse()
-            bottom.forEach(p => { points.push(p.add(new Vec3(0, 2, 0))) })
+            bottom.forEach(p => { points.push(p.add(new Vec3(0, 1.5, 0))) })
             
             top_grid.push(points)
             vertices.push(...points)

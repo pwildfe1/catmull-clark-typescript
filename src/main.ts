@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { visualizer } from './visualizer'
 import {GUI} from "dat.gui";
 import { ThreadedRingMesh } from './ThreadedRingMesh'
+import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 
 const gui = new GUI()
 const environment = new visualizer();
@@ -13,10 +14,25 @@ environment.scene.background = new THREE.Color(0xFAF9F6)
 const light = new THREE.HemisphereLight(0xffffff, 0xffffff, 1);
 environment.scene.add( light );
 
-// const dirLight01 = new THREE.DirectionalLight( 0xffffff, 5 )
-// dirLight01.position.set( 0, 200, 100 )
-// dirLight01.castShadow = true
-// environment.scene.add( dirLight01 )
+const ground: Reflector = new Reflector(
+  new THREE.PlaneGeometry( 2000, 2000 ),
+  {
+      color: new THREE.Color(0xFAF9F6),
+      textureWidth: window.innerWidth * window.devicePixelRatio,
+      textureHeight: window.innerHeight * window.devicePixelRatio,
+  }
+)
+
+ground.rotation.x = - Math.PI / 2;
+ground.position.y = -.25;
+ground.receiveShadow = true;
+
+const ground_blur = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshPhongMaterial({color: 0xFAF9F6, transparent:true}))
+
+ground_blur.rotation.x = - Math.PI / 2;
+ground_blur.position.y = 0;
+ground_blur.material.opacity = 0.75;
+ground_blur.material.needsUpdate = true;
 
 let reflect = .75
 let emi = .1
@@ -33,7 +49,10 @@ const envTexture = new THREE.CubeTextureLoader().load([
 envTexture.mapping = THREE.CubeReflectionMapping
 mat.envMap = envTexture
 
+environment.scene.add( ground );
+environment.scene.add(ground_blur);
 environment.scene.fog = new THREE.Fog( 0xcccccc, 50, 100 );
+
 environment.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 environment.renderer.toneMappingExposure = 0.85;
 
@@ -47,6 +66,9 @@ gui.add(myThreadedMesh, "WaveCount", 0, 2, .5).onChange(function(){
 })
 gui.add(myThreadedMesh, "SegmentCount", 25, 41, 1).onChange(function(){
   myThreadedMesh.UpdateSegmentCount()
+})
+gui.add(myThreadedMesh, "Diameter", 13, 20, .5).onChange(function(){
+  myThreadedMesh.UpdateDiameter()
 })
 gui.add(myThreadedMesh, "MidSectionFactor", .5, 1.5, .1).onChange(function(){
   myThreadedMesh.UpdateMidSection()

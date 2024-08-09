@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import {OBJExporter} from "three/examples/jsm/exporters/OBJExporter";
+import {OBJExporter} from "three/examples/jsm/exporters/OBJExporter.js";
 import {Vec3} from "./Vec3"
 
 export class GeometryQuads {
@@ -9,16 +9,14 @@ export class GeometryQuads {
     Edges: Array<Array<number>> = []
     FaceEdges: Array<Array<number>> = []
     Buffer: THREE.BufferGeometry = new THREE.BufferGeometry()
-    Catmull: GeometryQuads
     Smooth_Count: number = 0
 
     private FaceCenters: Array<Vec3> = []
     private EdgeCenters: Array<Vec3> = []
-    private FaceNormals: Array<Vec3> = []
     private v: Array<number> = []
     private indices: Array<number> = []
     private Exporter: OBJExporter = new OBJExporter()
-
+    
     constructor(vertices: Array<Vec3>, faces: Array<Array<number>>){
 
         this.Vertices = vertices
@@ -27,14 +25,12 @@ export class GeometryQuads {
 
     }
 
-
     update_geometry(){
 
         this.Buffer = new THREE.BufferGeometry()
         this.Edges = []
         this.EdgeCenters = []
-        this.FaceEdges = []
-        this.FaceNormals = []        
+        this.FaceEdges = []      
 
         this.Vertices.forEach(p=>{this.v.push(...[p.x, p.y, p.z])})
 
@@ -93,13 +89,11 @@ export class GeometryQuads {
 
         if (this.Smooth_Count > 0){
 
-            this.execute_catmull()
-            let smoothed = this.Catmull
+            let smoothed = this.execute_catmull()
 
             if (this.Smooth_Count > 1){
                 for(let i = 0; i < this.Smooth_Count; i++){
-                    smoothed.execute_catmull()
-                    smoothed = smoothed.Catmull
+                    smoothed = smoothed.execute_catmull()
                 }
                 return smoothed
             }
@@ -113,7 +107,7 @@ export class GeometryQuads {
 
     }
 
-    execute_catmull(){
+    execute_catmull(): GeometryQuads{
 
         this.EdgeCenters = []
         let new_vertices: Array<Vec3> = []
@@ -172,11 +166,11 @@ export class GeometryQuads {
 
         })
 
-        this.UpdateSmoothFaces(new_vertices)
+        return this.UpdateSmoothFaces(new_vertices)
 
     }
 
-    UpdateSmoothFaces(new_vertices : Array<Vec3>){
+    UpdateSmoothFaces(new_vertices : Array<Vec3>): GeometryQuads{
 
         let smooth_vertices: Array<Vec3> = []
         let flat_v: Array<number> = []
@@ -217,7 +211,7 @@ export class GeometryQuads {
             }
         })
 
-        this.Catmull = new GeometryQuads(smooth_vertices, faces)
+        let smoothed_geo = new GeometryQuads(smooth_vertices, faces)
 
         faces.forEach(f =>{
             let triangle01 = [f[0], f[1], f[2]]
@@ -225,6 +219,8 @@ export class GeometryQuads {
             indices.push(...triangle01)
             indices.push(...triangle02)
         })
+
+        return smoothed_geo
     }
 
     Download_Quads(): void{

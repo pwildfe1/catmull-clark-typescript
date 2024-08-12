@@ -190,8 +190,8 @@ export class ThreadedRing {
             vertices.push(...pts)
 
             for(let j = 0; j < bot_indices.length; j++){
-                faces.push([bot_indices[j], mid_indices[j], mid_indices[(j+1)%bot_indices.length], bot_indices[(j+1)%bot_indices.length]])
-                faces.push([mid_indices[j], top_indices[j], top_indices[(j+1)%bot_indices.length], mid_indices[(j+1)%bot_indices.length]])
+                faces.push([bot_indices[j], bot_indices[(j+1)%bot_indices.length], mid_indices[(j+1)%bot_indices.length], mid_indices[j]])
+                faces.push([mid_indices[j], mid_indices[(j+1)%bot_indices.length], top_indices[(j+1)%bot_indices.length], top_indices[j]])
             }
             
         }
